@@ -160,7 +160,7 @@ export const wechatKfPlugin = {
       cfg: OpenClawConfig;
       setStatus: (status: string) => void;
     }): Promise<void> {
-      const log = getRuntime().log;
+      const log = console;
       const account = resolveAccount(ctx.cfg, ctx.accountId);
 
       if (!account.corpId || !account.kfSecret) {

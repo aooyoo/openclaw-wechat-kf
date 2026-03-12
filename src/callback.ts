@@ -7,7 +7,7 @@ import type {
 import { verifySignature, decryptMessage } from "./crypto.js";
 import { parseCallbackXml } from "./xml.js";
 import { syncMessages } from "./api.js";
-import { resolveAccount, listAccountIds } from "./config.js";
+import { resolveAccount, listAccountIds, getConfig } from "./config.js";
 import { getRuntime } from "./runtime.js";
 
 /** 消息去重缓存 (msgid -> timestamp) */
@@ -66,8 +66,7 @@ function readBody(req: any): Promise<string> {
  * 查找匹配的账号（通过回调中的 ToUserName 或遍历所有账号）
  */
 function findAccount(): ResolvedWechatKfAccount | null {
-  const runtime = getRuntime();
-  const cfg = runtime.getConfig();
+  const cfg = getConfig();
   const accountIds = listAccountIds(cfg);
 
   for (const id of accountIds) {
@@ -167,8 +166,7 @@ async function pullAndProcessMessages(
   account: ResolvedWechatKfAccount,
   callbackToken?: string,
 ): Promise<void> {
-  const runtime = getRuntime();
-  const log = runtime.log;
+  const log = console;
 
   try {
     const cursor = cursors.get(account.accountId);
@@ -201,8 +199,13 @@ async function pullAndProcessMessages(
       const state = accountStates.get(account.accountId);
       if (state) state.lastInboundAt = Date.now();
 
-      // 转发给 OpenClaw
-      await runtime.channel.handleIncomingMessage(incoming);
+      // 转发给 OpenClaw（通过 runtime channel）
+      const runtime = getRuntime();
+      if (runtime?.channel?.handleIncomingMessage) {
+        await runtime.channel.handleIncomingMessage(incoming);
+      } else {
+        log.warn("Runtime channel not available, message not forwarded");
+      }
     }
 
     // 如果还有更多消息，继续拉取
@@ -221,7 +224,7 @@ async function pullAndProcessMessages(
  * 处理 GET（URL 验证）和 POST（事件通知）请求
  */
 export async function handleCallback(req: any, res: any): Promise<boolean> {
-  const log = getRuntime().log;
+  const log = console;
   const query = parseQuery(req.url ?? "");
   const account = findAccount();
 
