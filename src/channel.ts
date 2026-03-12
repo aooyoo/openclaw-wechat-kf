@@ -38,7 +38,7 @@ export const wechatKfPlugin = {
     resolveAccount(
       cfg: OpenClawConfig,
       accountId: string,
-    ): ResolvedWechatKfAccount | null {
+    ): ResolvedWechatKfAccount {
       return resolveAccount(cfg, accountId);
     },
 
@@ -136,8 +136,8 @@ export const wechatKfPlugin = {
       cfg: OpenClawConfig;
     }): Promise<{ channel: string; messageId?: string; error?: string }> {
       const account = resolveAccount(params.cfg, params.accountId);
-      if (!account) {
-        return { channel: "wechat-kf", error: "Account not found" };
+      if (!account.corpId || !account.kfSecret) {
+        return { channel: "wechat-kf", error: "Account not configured (missing corpId or kfSecret)" };
       }
 
       const result = await sendText(account, params.to, params.text);
@@ -163,9 +163,9 @@ export const wechatKfPlugin = {
       const log = getRuntime().log;
       const account = resolveAccount(ctx.cfg, ctx.accountId);
 
-      if (!account) {
+      if (!account.corpId || !account.kfSecret) {
         ctx.setStatus("error");
-        log.error(`Account ${ctx.accountId} not found`);
+        log.error(`Account ${ctx.accountId} not configured (missing corpId or kfSecret)`);
         return;
       }
 

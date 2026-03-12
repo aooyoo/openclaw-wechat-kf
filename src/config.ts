@@ -44,7 +44,7 @@ export function listAccountIds(cfg: OpenClawConfig): string[] {
 export function resolveAccount(
   cfg: OpenClawConfig,
   accountId: string,
-): ResolvedWechatKfAccount | null {
+): ResolvedWechatKfAccount {
   const channelCfg = getChannelConfig(cfg);
   let accountCfg: WechatKfAccountConfig;
 
@@ -63,15 +63,11 @@ export function resolveAccount(
     };
   }
 
-  if (!accountCfg.corpId || !accountCfg.kfSecret) {
-    return null;
-  }
-
   return {
     accountId,
     enabled: accountCfg.enabled !== false,
-    corpId: accountCfg.corpId,
-    kfSecret: accountCfg.kfSecret,
+    corpId: accountCfg.corpId ?? "",
+    kfSecret: accountCfg.kfSecret ?? "",
     token: accountCfg.token ?? "",
     encodingAESKey: accountCfg.encodingAESKey ?? "",
     openKfId: accountCfg.openKfId ?? "",
