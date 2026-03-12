@@ -1,0 +1,39 @@
+{
+  "id": "wechat-kf",
+  "name": "微信客服",
+  "description": "微信客服消息通道插件，支持通过微信客服 API 接收和发送消息",
+  "channels": ["wechat-kf"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "corpId": {
+        "type": "string",
+        "description": "企业ID (Corp ID)"
+      },
+      "kfSecret": {
+        "type": "string",
+        "description": "微信客服的 Secret"
+      },
+      "token": {
+        "type": "string",
+        "description": "回调配置 Token，用于签名验证"
+      },
+      "encodingAESKey": {
+        "type": "string",
+        "description": "回调配置 EncodingAESKey，43位字符串，用于消息加解密"
+      },
+      "openKfId": {
+        "type": "string",
+        "description": "客服账号ID (open_kfid)"
+      }
+    }
+  },
+  "uiHints": {
+    "corpId": { "label": "企业ID", "placeholder": "ww1234567890abcdef" },
+    "kfSecret": { "label": "客服 Secret", "sensitive": true },
+    "token": { "label": "回调 Token", "sensitive": true },
+    "encodingAESKey": { "label": "EncodingAESKey", "sensitive": true },
+    "openKfId": { "label": "客服账号ID", "placeholder": "wkxxxxxxxxx" }
+  }
+}

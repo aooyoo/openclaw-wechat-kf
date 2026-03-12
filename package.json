@@ -1,0 +1,30 @@
+{
+  "name": "openclaw-wechat-kf",
+  "version": "0.1.0",
+  "description": "微信客服 Channel 插件 for OpenClaw",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "index.ts",
+    "tsconfig.json",
+    "openclaw.plugin.json"
+  ],
+  "openclaw": {
+    "extensions": ["./index.ts"]
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "peerDependencies": {
+    "openclaw": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.9.3"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,14 @@
+import type { PluginRuntime } from "./types.js";
+
+let runtime: PluginRuntime | null = null;
+
+export function setRuntime(next: PluginRuntime): void {
+  runtime = next;
+}
+
+export function getRuntime(): PluginRuntime {
+  if (!runtime) {
+    throw new Error("WechatKf runtime not initialized");
+  }
+  return runtime;
+}
