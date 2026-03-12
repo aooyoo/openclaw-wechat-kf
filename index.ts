@@ -5,7 +5,7 @@ import { handleCallback } from "./src/callback.js";
 import { setRuntime } from "./src/runtime.js";
 
 const plugin = {
-  id: "wechat-kf",
+  id: "openclaw-wechat-kf",
   name: "微信客服",
   description: "微信客服消息通道插件，支持通过微信客服 API 接收和发送消息",
   configSchema: {
