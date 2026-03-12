@@ -4,29 +4,49 @@ import type {
   WechatKfAccountConfig,
   ResolvedWechatKfAccount,
 } from "./types.js";
+import { readFileSync } from "fs";
+import { homedir } from "os";
+import { join } from "path";
 
 const CHANNEL_ID = "wechat-kf";
 
-/**
- * 获取频道配置
- */
+// 直接从配置文件读取（兼容不同 OpenClaw 版本）
+let _configCache: OpenClawConfig | null = null;
+
+function loadConfig(): OpenClawConfig {
+  try {
+    const configPath = join(homedir(), ".openclaw", "openclaw.json");
+    const content = readFileSync(configPath, "utf-8");
+    return JSON.parse(content);
+  } catch (e) {
+    console.error("[wechat-kf] Failed to load config:", e);
+    return { channels: {} };
+  }
+}
+
+export function getConfig(): OpenClawConfig {
+  if (!_configCache) {
+    _configCache = loadConfig();
+  }
+  return _configCache;
+}
+
+export function refreshConfig(): void {
+  _configCache = null;
+}
+
 function getChannelConfig(cfg: OpenClawConfig): WechatKfChannelConfig {
   return (cfg.channels?.[CHANNEL_ID] ?? {}) as WechatKfChannelConfig;
 }
 
-/**
- * 列出所有已配置的账号 ID
- */
 export function listAccountIds(cfg: OpenClawConfig): string[] {
   const channelCfg = getChannelConfig(cfg);
   const ids: string[] = [];
 
-  // 如果有顶层配置（默认账号）
   if (channelCfg.corpId || channelCfg.kfSecret) {
     ids.push("default");
   }
 
-  // 多账号
   if (channelCfg.accounts) {
     for (const id of Object.keys(channelCfg.accounts)) {
       if (!ids.includes(id)) {
@@ -38,9 +58,6 @@ export function listAccountIds(cfg: OpenClawConfig): string[] {
   return ids;
 }
 
-/**
- * 解析完整的账号配置
- */
 export function resolveAccount(
   cfg: OpenClawConfig,
   accountId: string,
@@ -52,7 +69,6 @@ export function resolveAccount(
     accountCfg = channelCfg;
   } else {
     accountCfg = channelCfg.accounts?.[accountId] ?? {};
-    // 从顶层继承缺失的字段
     accountCfg = {
       corpId: accountCfg.corpId ?? channelCfg.corpId,
       kfSecret: accountCfg.kfSecret ?? channelCfg.kfSecret,
@@ -74,13 +90,10 @@ export function resolveAccount(
   };
 }
 
-/**
- * 检查账号是否已配置
- */
 export function isAccountConfigured(
   cfg: OpenClawConfig,
   accountId: string,
 ): boolean {
   const account = resolveAccount(cfg, accountId);
-  return account !== null && !!account.corpId && !!account.kfSecret && !!account.token;
+  return !!account.corpId && !!account.kfSecret && !!account.token;
 }

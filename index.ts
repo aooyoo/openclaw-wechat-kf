@@ -26,7 +26,12 @@ const plugin = {
       handler: handleCallback,
     });
 
-    api.runtime.log.info("微信客服插件已加载");
+    // api.runtime.log?.info?.("微信客服插件已加载") || console.log("[wechat-kf] 插件已加载");
+    if (api.runtime?.log?.info) {
+      api.runtime.log.info("微信客服插件已加载");
+    } else {
+      console.log("[wechat-kf] 插件已加载");
+    }
   },
 };
 
