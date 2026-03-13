@@ -267,10 +267,7 @@ export const wechatKfPlugin = {
         }): Promise<string>;
         confirm(opts: { message: string; default?: boolean }): Promise<boolean>;
       };
-      setAccountConfig(
-        accountId: string,
-        cfg: Record<string, any>,
-      ): Promise<void>;
+      // ctx 参数可能没有 setAccountConfig，根据最新的 OpenClaw 接口调整
     }) {
       const { prompter } = ctx;
 
@@ -300,25 +297,45 @@ export const wechatKfPlugin = {
         default: "",
       });
 
-      await ctx.setAccountConfig("default", {
+      // 获取并合并现有的 config
+      let currentCfg = getConfig();
+      if (!currentCfg.channels) currentCfg.channels = {};
+      if (!currentCfg.channels["wechat-kf"]) currentCfg.channels["wechat-kf"] = {};
+      
+      const newAccountConfig = {
         corpId,
         kfSecret,
         token,
         encodingAESKey,
         openKfId,
         enabled: true,
-      });
+      };
 
-      return { cfg: getConfig(), accountId: "default" };
+      // 判断是写在 root 下（作为默认账号）还是写在 accounts 里
+      const defaultAccountIds = listAccountIds(currentCfg);
+      const isDefault = defaultAccountIds.length === 0 || defaultAccountIds[0] === "default";
+      
+      if (isDefault) {
+        Object.assign(currentCfg.channels["wechat-kf"], newAccountConfig);
+      } else {
+         if (!currentCfg.channels["wechat-kf"].accounts) {
+           currentCfg.channels["wechat-kf"].accounts = {};
+         }
+         currentCfg.channels["wechat-kf"].accounts["default"] = newAccountConfig;
+      }
+
+      return { cfg: currentCfg, accountId: "default" };
     },
 
-    async disable(ctx: {
-      setAccountConfig(
-        accountId: string,
-        cfg: Record<string, any>,
-      ): Promise<void>;
-    }) {
-      await ctx.setAccountConfig("default", { enabled: false });
+    async disable(ctx: any) {
+      let currentCfg = getConfig();
+      if (currentCfg.channels && currentCfg.channels["wechat-kf"]) {
+        currentCfg.channels["wechat-kf"].enabled = false;
+        if (currentCfg.channels["wechat-kf"].accounts && currentCfg.channels["wechat-kf"].accounts["default"]) {
+             currentCfg.channels["wechat-kf"].accounts["default"].enabled = false;
+        }
+      }
+      return { cfg: currentCfg, accountId: "default" };
     },
   },
 };
