@@ -71,7 +71,7 @@ function findAccount(): ResolvedWechatKfAccount | null {
 
   for (const id of accountIds) {
     const account = resolveAccount(cfg, id);
-    if (account.enabled && account.corpId && account.kfSecret) {
+    if (account.enabled && account.corpId && account.token) {
       return account;
     }
   }

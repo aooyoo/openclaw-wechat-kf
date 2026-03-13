@@ -53,7 +53,7 @@ export const wechatKfPlugin = {
     },
 
     isConfigured(account: ResolvedWechatKfAccount): boolean {
-      return !!account.corpId && !!account.kfSecret && !!account.token;
+      return !!account.corpId && !!account.token;
     },
 
     describeAccount(account: ResolvedWechatKfAccount): string {
@@ -179,10 +179,18 @@ export const wechatKfPlugin = {
       const log = console;
       const account = resolveAccount(ctx.cfg, ctx.accountId);
 
-      if (!account.corpId || !account.kfSecret) {
+      if (!account.corpId) {
         ctx.setStatus("error");
         log.error(
-          `Account ${ctx.accountId} not configured (missing corpId or kfSecret)`,
+          `Account ${ctx.accountId} not configured (missing corpId)`,
+        );
+        return;
+      }
+
+      if (!account.kfSecret) {
+        ctx.setStatus("disconnected");
+        log.warn(
+          `微信客服账号 ${ctx.accountId} 缺少 kfSecret。当前仅能用于验证 Webhook URL。获取密钥后请补充配置。`
         );
         return;
       }
@@ -243,7 +251,7 @@ export const wechatKfPlugin = {
       const ids = listAccountIds(cfg);
       if (ids.length === 0) return { configured: false };
       const account = resolveAccount(cfg, ids[0]);
-      if (!account.corpId || !account.kfSecret) return { configured: false };
+      if (!account.corpId || !account.token) return { configured: false };
       return {
         configured: true,
         message: `已配置微信客服账号: ${account.openKfId || account.accountId}`,
@@ -271,20 +279,20 @@ export const wechatKfPlugin = {
         validate: (v: string) => v.trim().length > 0 ? undefined : "企业ID不能为空",
       });
 
-      const kfSecret = await prompter.text({
-        message: "【2/5】请输入微信客服 Secret (从'微信客服'后台获取):",
-        validate: (v: string) => v.trim().length > 0 ? undefined : "Secret不能为空",
-      });
-
       const token = await prompter.text({
-        message: "【3/5】请设置或输入回调 Token (如果在后台已点'随机生成'则复制那串，若没生成请在此输入后去后台填相同的):",
+        message: "【2/5】请设置或输入回调 Token (如果在后台已点'随机生成'则复制那串，若没生成请在此输入后去后台填相同的):",
         validate: (v: string) => v.trim().length > 0 ? undefined : "Token不能为空",
       });
 
       const encodingAESKey = await prompter.text({
-        message: "【4/5】请设置或输入回调 EncodingAESKey (同上，请点击'随机生成'按钮然后复制过来，必须43位):",
+        message: "【3/5】请设置或输入回调 EncodingAESKey (同上，请点击'随机生成'按钮然后复制过来，必须43位):",
         validate: (v: string) =>
           v.length === 43 ? undefined : "EncodingAESKey 必须是43位字符",
+      });
+
+      const kfSecret = await prompter.text({
+        message: "【4/5】请输入微信客服 Secret (一般在填完回调URL配置后获取，可直接回车跳过后补):",
+        default: "",
       });
 
       const openKfId = await prompter.text({
