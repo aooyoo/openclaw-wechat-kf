@@ -98,14 +98,14 @@ openclaw channels add --channel wechat-kf \
 在微信客服管理后台的「开发配置」中，将回调 URL 设置为：
 
 ```
-https://你的域名/api/plugin/openclaw-wechat-kf/wechat-kf/callback
+https://你的域名/wechat-kf/callback
 ```
 
 本地开发可以用 ngrok 暴露：
 
 ```bash
 ngrok http 18789
-# 然后用 ngrok 给的 https 地址 + /api/plugin/openclaw-wechat-kf/wechat-kf/callback
+# 然后用 ngrok 给的 https 地址 + /wechat-kf/callback
 ```
 
 ## 支持的消息类型
