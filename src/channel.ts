@@ -1,5 +1,5 @@
 import type { OpenClawConfig, ResolvedWechatKfAccount } from "./types.js";
-import { listAccountIds, resolveAccount, isAccountConfigured } from "./config.js";
+import { listAccountIds, resolveAccount, isAccountConfigured, getConfig } from "./config.js";
 import { sendText } from "./outbound.js";
 import { accountStates } from "./callback.js";
 import { getRuntime } from "./runtime.js";
@@ -216,6 +216,72 @@ export const wechatKfPlugin = {
         lastInboundAt: state?.lastInboundAt,
         lastOutboundAt: state?.lastOutboundAt,
       };
+    },
+  },
+
+  onboarding: {
+    async getStatus() {
+      const cfg = getConfig();
+      const ids = listAccountIds(cfg);
+      if (ids.length === 0) return { configured: false };
+      const account = resolveAccount(cfg, ids[0]);
+      if (!account.corpId || !account.kfSecret) return { configured: false };
+      return {
+        configured: true,
+        message: `已配置微信客服账号: ${account.openKfId || account.accountId}`,
+      };
+    },
+
+    async configure(ctx: {
+      prompter: {
+        text(opts: { message: string; default?: string; validate?: (v: string) => string | true }): Promise<string>;
+        confirm(opts: { message: string; default?: boolean }): Promise<boolean>;
+      };
+      setAccountConfig(accountId: string, cfg: Record<string, any>): Promise<void>;
+    }) {
+      const { prompter } = ctx;
+
+      const corpId = await prompter.text({
+        message: "请输入企业ID (Corp ID):",
+        validate: (v: string) => v.length > 0 || "企业ID不能为空",
+      });
+
+      const kfSecret = await prompter.text({
+        message: "请输入微信客服 Secret:",
+        validate: (v: string) => v.length > 0 || "Secret不能为空",
+      });
+
+      const token = await prompter.text({
+        message: "请输入回调 Token:",
+        validate: (v: string) => v.length > 0 || "Token不能为空",
+      });
+
+      const encodingAESKey = await prompter.text({
+        message: "请输入回调 EncodingAESKey (43位):",
+        validate: (v: string) => v.length === 43 || "EncodingAESKey 必须是43位字符",
+      });
+
+      const openKfId = await prompter.text({
+        message: "请输入客服账号ID (open_kfid，如 wkxxxxxxxx):",
+        default: "",
+      });
+
+      await ctx.setAccountConfig("default", {
+        corpId,
+        kfSecret,
+        token,
+        encodingAESKey,
+        openKfId,
+        enabled: true,
+      });
+
+      return { cfg: getConfig(), accountId: "default" };
+    },
+
+    async disable(ctx: {
+      setAccountConfig(accountId: string, cfg: Record<string, any>): Promise<void>;
+    }) {
+      await ctx.setAccountConfig("default", { enabled: false });
     },
   },
 };
