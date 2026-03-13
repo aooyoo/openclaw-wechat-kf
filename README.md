@@ -108,7 +108,7 @@ https://你的域名/wechat-kf/callback
 没有服务器的本地开发者，可以使用支持自定义备案域名的内网穿透工具：
 
 - [cpolar](https://www.cpolar.com/)：支持自定义备案域名
-- [花生壳](https://www.oray.com/)：支持自有夂名
+- [花生壳](https://www.oray.com/)：支持自有域名
 - [natapp](https://natapp.cn/)：支持自定义域名
 
 ```bash

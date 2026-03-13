@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__web-search-prime__web_search_prime",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "WebFetch(domain:deepwiki.com)",
+      "WebFetch(domain:kf.weixin.qq.com)",
+      "WebFetch(domain:docs.openclaw.ai)",
+      "WebFetch(domain:www.kancloud.cn)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git rebase:*)",
+      "Bash(git reset:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(aW1wb3J0IHR5cGUgewogIENoYW5uZWxPbmJvYXJkaW5nQWRhcHRlciwKICBD)",
+      "Bash(aGFubmVsT25ib2FyZGluZ0RtUG9saWN5LAogIENsYXdkYm90Q29uZmlnLAog)",
+      "Bash(IERtUG9saWN5LAogIFdpemFyZFByb21wdGVyLAp9IGZyb20gIm9wZW5jbGF3)",
+      "Bash(L3BsdWdpbi1zZGsiOwppbXBvcnQgewogIGFkZFdpbGRjYXJkQWxsb3dGcm9tnLAogIERFRkFVTFRfQUNDT1VOVF9JRCwKnZm9ybWF0RG9jc0xpbmssCiAgbm9ybWFsaXplQWNjb3VudElkLAogIHBynJm9tcHRBY2NvdW50SWQsCn0gZnJvbSAib3BlbmNsYXcvcGx1Z2luLXNkayI7Cg==)",
+      "Bash(EOF)"
+    ]
+  }
+}
