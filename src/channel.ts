@@ -220,53 +220,78 @@ export const wechatKfPlugin = {
   },
 
   onboarding: {
-    async getStatus() {
-      const cfg = getConfig();
+    async getStatus({ cfg }: { cfg: OpenClawConfig }) {
       const ids = listAccountIds(cfg);
-      if (ids.length === 0) return { configured: false };
+      if (ids.length === 0) return { configured: false, statusLines: [], quickstartScore: 20 };
       const account = resolveAccount(cfg, ids[0]);
-      if (!account.corpId || !account.kfSecret) return { configured: false };
+      if (!account.corpId || !account.kfSecret) {
+        return { configured: false, statusLines: ["needs credentials"], quickstartScore: 20 };
+      }
       return {
         configured: true,
-        message: `已配置微信客服账号: ${account.openKfId || account.accountId}`,
+        statusLines: [`账号: ${account.openKfId || account.accountId}`],
+        quickstartScore: 1,
       };
     },
 
-    async configure(ctx: {
+    async configure({ cfg, prompter }: {
+      cfg: OpenClawConfig;
       prompter: {
-        text(opts: { message: string; default?: string; validate?: (v: string) => string | true }): Promise<string>;
-        confirm(opts: { message: string; default?: boolean }): Promise<boolean>;
+        text(opts: { message: string; placeholder?: string; initialValue?: string; validate?: (v: string) => string | undefined }): Promise<string>;
+        password(opts: { message: string; validate?: (v: string) => string | undefined }): Promise<string>;
+        confirm(opts: { message: string; initialValue?: boolean }): Promise<boolean>;
+        select(opts: { message: string; options: { value: string; label: string }[]; initialValue?: string }): Promise<string>;
+        note(message: string, title?: string): Promise<void>;
       };
-      setAccountConfig(accountId: string, cfg: Record<string, any>): Promise<void>;
     }) {
-      const { prompter } = ctx;
+      await prompter.note(
+        [
+          "1) 登录企业微信管理后台，进入「微信客服」应用",
+          "2) 在「开发配置」中获取 Corp ID 和 Secret",
+          "3) 配置回调 URL、Token 和 EncodingAESKey",
+          "4) 获取客服账号 ID (open_kfid)",
+        ].join("\n"),
+        "微信客服配置指引",
+      );
 
-      const corpId = await prompter.text({
-        message: "请输入企业ID (Corp ID):",
-        validate: (v: string) => v.length > 0 || "企业ID不能为空",
-      });
+      const corpId = String(await prompter.text({
+        message: "企业ID (Corp ID)",
+        placeholder: "ww1234567890abcdef",
+        validate: (v: string) => v?.trim() ? undefined : "企业ID不能为空",
+      })).trim();
 
-      const kfSecret = await prompter.text({
-        message: "请输入微信客服 Secret:",
-        validate: (v: string) => v.length > 0 || "Secret不能为空",
-      });
+      const kfSecret = String(await prompter.password({
+        message: "微信客服 Secret",
+        validate: (v: string) => v?.trim() ? undefined : "Secret不能为空",
+      })).trim();
 
-      const token = await prompter.text({
-        message: "请输入回调 Token:",
-        validate: (v: string) => v.length > 0 || "Token不能为空",
-      });
+      const token = String(await prompter.password({
+        message: "回调 Token",
+        validate: (v: string) => v?.trim() ? undefined : "Token不能为空",
+      })).trim();
 
-      const encodingAESKey = await prompter.text({
-        message: "请输入回调 EncodingAESKey (43位):",
-        validate: (v: string) => v.length === 43 || "EncodingAESKey 必须是43位字符",
-      });
+      const encodingAESKey = String(await prompter.password({
+        message: "回调 EncodingAESKey (43位)",
+        validate: (v: string) => v?.trim().length === 43 ? undefined : "EncodingAESKey 必须是43位字符",
+      })).trim();
 
-      const openKfId = await prompter.text({
-        message: "请输入客服账号ID (open_kfid，如 wkxxxxxxxx):",
-        default: "",
-      });
+      const openKfId = String(await prompter.text({
+        message: "客服账号ID (open_kfid)",
+        placeholder: "wkxxxxxxxx",
+      })).trim();
 
-      await ctx.setAccountConfig("default", {
+      // 测试连接
+      try {
+        await getAccessToken(corpId, kfSecret);
+        await prompter.note("连接成功！凭据验证通过。", "微信客服");
+      } catch (err: any) {
+        await prompter.note(`连接失败: ${err.message}\n配置已保存，请检查凭据后重启。`, "微信客服");
+      }
+
+      // 写入配置
+      if (!cfg.channels) cfg.channels = {};
+      if (!cfg.channels["wechat-kf"]) cfg.channels["wechat-kf"] = {};
+      Object.assign(cfg.channels["wechat-kf"], {
         corpId,
         kfSecret,
         token,
@@ -275,13 +300,7 @@ export const wechatKfPlugin = {
         enabled: true,
       });
 
-      return { cfg: getConfig(), accountId: "default" };
-    },
-
-    async disable(ctx: {
-      setAccountConfig(accountId: string, cfg: Record<string, any>): Promise<void>;
-    }) {
-      await ctx.setAccountConfig("default", { enabled: false });
+      return { cfg, accountId: "default" };
     },
   },
 };
