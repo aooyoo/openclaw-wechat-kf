@@ -24,10 +24,11 @@
 - 企业已在 [微信客服管理后台](https://kf.weixin.qq.com/) 开通微信客服并开启 API
 - 准备好以下凭据：
   - **企业ID** (Corp ID)
-  - **微信客服 Secret**
+  - **微信客服 Secret**（需先完成回调配置后才登录后台查看）
   - **回调 Token**
   - **回调 EncodingAESKey**
   - **客服账号ID** (open_kfid)
+- **已备案的中国大陆域名**：微信客服回调 URL 必须使用在中国大陆完成 ICP 备案的域名，使用 ngrok-free.app 等境外域名会导致「回调域名校验失败」
 
 ## 安装
 
@@ -101,11 +102,20 @@ openclaw channels add --channel wechat-kf \
 https://你的域名/wechat-kf/callback
 ```
 
-本地开发可以用 ngrok 暴露：
+> **注意**：微信客服回调域名必须是已在中国大陆完成 **ICP 备案**的域名。
+> `ngrok-free.app`、`cloudflare tunnels` 等境外域名一律无法通过微信的域名校验，第一次设置时会报「回调域名校验失败」错误。
+
+没有服务器的本地开发者，可以使用支持自定义备案域名的内网穿透工具：
+
+- [cpolar](https://www.cpolar.com/)：支持自定义备案域名
+- [花生壳](https://www.oray.com/)：支持自有夂名
+- [natapp](https://natapp.cn/)：支持自定义域名
 
 ```bash
-ngrok http 18789
-# 然后用 ngrok 给的 https 地址 + /wechat-kf/callback
+# 示例（以 cpolar 为例）
+# 1. 配置备案域名穿透到本地 18789 端口
+cpolar http 18789 --subdomain 你的备案域名
+# 2. 微信后台填写：https://你的备案域名/wechat-kf/callback
 ```
 
 ## 支持的消息类型
