@@ -255,7 +255,7 @@ export const wechatKfPlugin = {
         text(opts: {
           message: string;
           default?: string;
-          validate?: (v: string) => string | true;
+          validate?: (v: string) => string | void | boolean;
         }): Promise<string>;
         confirm(opts: { message: string; default?: boolean }): Promise<boolean>;
       };
@@ -268,23 +268,23 @@ export const wechatKfPlugin = {
 
       const corpId = await prompter.text({
         message: "【1/5】请输入企业ID (Corp ID，在'我的企业'页面获取):",
-        validate: (v: string) => v.length > 0 || "企业ID不能为空",
+        validate: (v: string) => v.trim().length > 0 ? undefined : "企业ID不能为空",
       });
 
       const kfSecret = await prompter.text({
         message: "【2/5】请输入微信客服 Secret (从'微信客服'后台获取):",
-        validate: (v: string) => v.length > 0 || "Secret不能为空",
+        validate: (v: string) => v.trim().length > 0 ? undefined : "Secret不能为空",
       });
 
       const token = await prompter.text({
         message: "【3/5】请设置或输入回调 Token (如果在后台已点'随机生成'则复制那串，若没生成请在此输入后去后台填相同的):",
-        validate: (v: string) => v.length > 0 || "Token不能为空",
+        validate: (v: string) => v.trim().length > 0 ? undefined : "Token不能为空",
       });
 
       const encodingAESKey = await prompter.text({
         message: "【4/5】请设置或输入回调 EncodingAESKey (同上，请点击'随机生成'按钮然后复制过来，必须43位):",
         validate: (v: string) =>
-          v.length === 43 || "EncodingAESKey 必须是43位字符",
+          v.length === 43 ? undefined : "EncodingAESKey 必须是43位字符",
       });
 
       const openKfId = await prompter.text({
