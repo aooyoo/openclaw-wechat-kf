@@ -1,5 +1,10 @@
 import type { OpenClawConfig, ResolvedWechatKfAccount } from "./types.js";
-import { listAccountIds, resolveAccount, isAccountConfigured, getConfig } from "./config.js";
+import {
+  listAccountIds,
+  resolveAccount,
+  isAccountConfigured,
+  getConfig,
+} from "./config.js";
 import { sendText } from "./outbound.js";
 import { accountStates } from "./callback.js";
 import { getRuntime } from "./runtime.js";
@@ -63,11 +68,19 @@ export const wechatKfPlugin = {
 
     validateInput(input: { token?: string }): { ok: boolean; error?: string } {
       if (!input.token) {
-        return { ok: false, error: "请提供 --token 参数，格式: corpId:kfSecret:token:encodingAESKey:openKfId" };
+        return {
+          ok: false,
+          error:
+            "请提供 --token 参数，格式: corpId:kfSecret:token:encodingAESKey:openKfId",
+        };
       }
       const parts = input.token.split(":");
       if (parts.length < 4) {
-        return { ok: false, error: "Token 格式错误，需要: corpId:kfSecret:token:encodingAESKey[:openKfId]" };
+        return {
+          ok: false,
+          error:
+            "Token 格式错误，需要: corpId:kfSecret:token:encodingAESKey[:openKfId]",
+        };
       }
       return { ok: true };
     },
@@ -137,7 +150,10 @@ export const wechatKfPlugin = {
     }): Promise<{ channel: string; messageId?: string; error?: string }> {
       const account = resolveAccount(params.cfg, params.accountId);
       if (!account.corpId || !account.kfSecret) {
-        return { channel: "wechat-kf", error: "Account not configured (missing corpId or kfSecret)" };
+        return {
+          channel: "wechat-kf",
+          error: "Account not configured (missing corpId or kfSecret)",
+        };
       }
 
       const result = await sendText(account, params.to, params.text);
@@ -165,7 +181,9 @@ export const wechatKfPlugin = {
 
       if (!account.corpId || !account.kfSecret) {
         ctx.setStatus("error");
-        log.error(`Account ${ctx.accountId} not configured (missing corpId or kfSecret)`);
+        log.error(
+          `Account ${ctx.accountId} not configured (missing corpId or kfSecret)`,
+        );
         return;
       }
 
@@ -220,78 +238,61 @@ export const wechatKfPlugin = {
   },
 
   onboarding: {
-    async getStatus({ cfg }: { cfg: OpenClawConfig }) {
+    async getStatus() {
+      const cfg = getConfig();
       const ids = listAccountIds(cfg);
-      if (ids.length === 0) return { configured: false, statusLines: [], quickstartScore: 20 };
+      if (ids.length === 0) return { configured: false };
       const account = resolveAccount(cfg, ids[0]);
-      if (!account.corpId || !account.kfSecret) {
-        return { configured: false, statusLines: ["needs credentials"], quickstartScore: 20 };
-      }
+      if (!account.corpId || !account.kfSecret) return { configured: false };
       return {
         configured: true,
-        statusLines: [`账号: ${account.openKfId || account.accountId}`],
-        quickstartScore: 1,
+        message: `已配置微信客服账号: ${account.openKfId || account.accountId}`,
       };
     },
 
-    async configure({ cfg, prompter }: {
-      cfg: OpenClawConfig;
+    async configure(ctx: {
       prompter: {
-        text(opts: { message: string; placeholder?: string; initialValue?: string; validate?: (v: string) => string | undefined }): Promise<string>;
-        password(opts: { message: string; validate?: (v: string) => string | undefined }): Promise<string>;
-        confirm(opts: { message: string; initialValue?: boolean }): Promise<boolean>;
-        select(opts: { message: string; options: { value: string; label: string }[]; initialValue?: string }): Promise<string>;
-        note(message: string, title?: string): Promise<void>;
+        text(opts: {
+          message: string;
+          default?: string;
+          validate?: (v: string) => string | true;
+        }): Promise<string>;
+        confirm(opts: { message: string; default?: boolean }): Promise<boolean>;
       };
+      setAccountConfig(
+        accountId: string,
+        cfg: Record<string, any>,
+      ): Promise<void>;
     }) {
-      await prompter.note(
-        [
-          "1) 登录企业微信管理后台，进入「微信客服」应用",
-          "2) 在「开发配置」中获取 Corp ID 和 Secret",
-          "3) 配置回调 URL、Token 和 EncodingAESKey",
-          "4) 获取客服账号 ID (open_kfid)",
-        ].join("\n"),
-        "微信客服配置指引",
-      );
+      const { prompter } = ctx;
 
-      const corpId = String(await prompter.text({
-        message: "企业ID (Corp ID)",
-        placeholder: "ww1234567890abcdef",
-        validate: (v: string) => v?.trim() ? undefined : "企业ID不能为空",
-      })).trim();
+      const corpId = await prompter.text({
+        message: "【1/5】请输入企业ID (Corp ID，在'我的企业'页面获取):",
+        validate: (v: string) => v.length > 0 || "企业ID不能为空",
+      });
 
-      const kfSecret = String(await prompter.password({
-        message: "微信客服 Secret",
-        validate: (v: string) => v?.trim() ? undefined : "Secret不能为空",
-      })).trim();
+      const kfSecret = await prompter.text({
+        message: "【2/5】请输入微信客服 Secret (从'微信客服'后台获取):",
+        validate: (v: string) => v.length > 0 || "Secret不能为空",
+      });
 
-      const token = String(await prompter.password({
-        message: "回调 Token",
-        validate: (v: string) => v?.trim() ? undefined : "Token不能为空",
-      })).trim();
+      const token = await prompter.text({
+        message: "【3/5】请设置或输入回调 Token (如果在后台已点'随机生成'则复制那串，若没生成请在此输入后去后台填相同的):",
+        validate: (v: string) => v.length > 0 || "Token不能为空",
+      });
 
-      const encodingAESKey = String(await prompter.password({
-        message: "回调 EncodingAESKey (43位)",
-        validate: (v: string) => v?.trim().length === 43 ? undefined : "EncodingAESKey 必须是43位字符",
-      })).trim();
+      const encodingAESKey = await prompter.text({
+        message: "【4/5】请设置或输入回调 EncodingAESKey (同上，请点击'随机生成'按钮然后复制过来，必须43位):",
+        validate: (v: string) =>
+          v.length === 43 || "EncodingAESKey 必须是43位字符",
+      });
 
-      const openKfId = String(await prompter.text({
-        message: "客服账号ID (open_kfid)",
-        placeholder: "wkxxxxxxxx",
-      })).trim();
+      const openKfId = await prompter.text({
+        message: "【5/5】请输入客服账号ID (open_kfid，如 kfxxxxxxxx，可选):",
+        default: "",
+      });
 
-      // 测试连接
-      try {
-        await getAccessToken(corpId, kfSecret);
-        await prompter.note("连接成功！凭据验证通过。", "微信客服");
-      } catch (err: any) {
-        await prompter.note(`连接失败: ${err.message}\n配置已保存，请检查凭据后重启。`, "微信客服");
-      }
-
-      // 写入配置
-      if (!cfg.channels) cfg.channels = {};
-      if (!cfg.channels["wechat-kf"]) cfg.channels["wechat-kf"] = {};
-      Object.assign(cfg.channels["wechat-kf"], {
+      await ctx.setAccountConfig("default", {
         corpId,
         kfSecret,
         token,
@@ -300,7 +301,16 @@ export const wechatKfPlugin = {
         enabled: true,
       });
 
-      return { cfg, accountId: "default" };
+      return { cfg: getConfig(), accountId: "default" };
+    },
+
+    async disable(ctx: {
+      setAccountConfig(
+        accountId: string,
+        cfg: Record<string, any>,
+      ): Promise<void>;
+    }) {
+      await ctx.setAccountConfig("default", { enabled: false });
     },
   },
 };
